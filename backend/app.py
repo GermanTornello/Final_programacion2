@@ -114,17 +114,18 @@ def create_election():
         return jsonify({"error": "Solo admin"}), 403
 
     data = request.get_json()
-
     name = data.get("title")
-    status = "upcoming"   # válido según tu ENUM
+    start_date = data.get("start_date")
+    end_date = data.get("end_date")
+    status = "upcoming"
 
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
-        INSERT INTO elections (name, status)
-        VALUES (%s, %s)
-    """, (name, status))
+    INSERT INTO elections (name, start_date, end_date, status)
+    VALUES (%s, %s, %s, %s)
+""", (name, start_date, end_date, status))
 
     conn.commit()
 
@@ -336,6 +337,31 @@ def get_all_elections():
     conn.close()
 
     return jsonify(elections)
+
+@app.route("/admin/election/<int:election_id>", methods=["DELETE"])
+def delete_election(election_id):
+
+    if "user_id" not in session:
+        return jsonify({"error": "No autenticado"}), 401
+
+    if session.get("role") != "admin":
+        return jsonify({"error": "Solo admin"}), 403
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Primero borramos candidatos relacionados
+    cursor.execute("DELETE FROM candidates WHERE election_id = %s", (election_id,))
+
+    # Después borramos la elección
+    cursor.execute("DELETE FROM elections WHERE id = %s", (election_id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Elección eliminada"})
 
 # ---------------- LOGOUT ----------------
 

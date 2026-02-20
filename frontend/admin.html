@@ -49,10 +49,20 @@ input {
 
 <div class="card">
     <h3>Crear nueva elección</h3>
+
     <input type="text" id="title" placeholder="Título de la elección">
+    <br><br>
+
+    <label>Inicio:</label>
+    <input type="date" id="start_date">
+    <br><br>
+
+    <label>Fin:</label>
+    <input type="date" id="end_date">
+    <br><br>
+
     <button onclick="createElection()">Crear</button>
 </div>
-
 <div class="card">
     <h3>Lista de elecciones</h3>
     <div id="elections"></div>
@@ -85,6 +95,9 @@ async function loadElections() {
         <button onclick="updateStatus(${e.id}, 'active')" class="active">Activar</button>
         <button onclick="updateStatus(${e.id}, 'upcoming')" class="inactive">Próxima</button>
         <button onclick="updateStatus(${e.id}, 'closed')" class="closed">Cerrar</button>
+        <button onclick="deleteElection(${e.id})" style="background:black;color:white;">
+    Eliminar
+</button>
 
         <br><br>
         <input type="text" id="candidate-${e.id}" placeholder="Nombre candidato">
@@ -95,10 +108,13 @@ async function loadElections() {
 }
 
 async function createElection() {
-    const title = document.getElementById("title").value;
 
-    if (!title) {
-        alert("Ingrese un título");
+    const title = document.getElementById("title").value;
+    const start_date = document.getElementById("start_date").value;
+    const end_date = document.getElementById("end_date").value;
+
+    if (!title || !start_date || !end_date) {
+        alert("Complete todos los campos");
         return;
     }
 
@@ -108,14 +124,17 @@ async function createElection() {
             "Content-Type": "application/json"
         },
         credentials: "include",
-        body: JSON.stringify({ title })
+        body: JSON.stringify({ 
+            title,
+            start_date,
+            end_date
+        })
     });
 
     const data = await res.json();
 
     if (res.ok) {
         alert("Elección creada");
-        document.getElementById("title").value = "";
         loadElections();
     } else {
         alert(data.error);
@@ -166,6 +185,25 @@ async function updateStatus(id, status) {
     const data = await res.json();
 
     if (res.ok) {
+        loadElections();
+    } else {
+        alert(data.error);
+    }
+}
+async function deleteElection(id) {
+
+    const confirmDelete = confirm("¿Seguro que querés eliminar esta elección?");
+    if (!confirmDelete) return;
+
+    const res = await fetch(`${API}/admin/election/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+        alert("Elección eliminada");
         loadElections();
     } else {
         alert(data.error);
