@@ -43,6 +43,7 @@
 </div>
 
 <script>
+
 const list = document.getElementById("list");
 const filter = document.getElementById("filter");
 let elections = [];
@@ -81,28 +82,47 @@ function render() {
                     Fin: ${new Date(e.end_date).toLocaleDateString()}
                 </small>
             </div>
-            <span class="badge bg-${statusBadge[e.status]} px-3 py-2">
-                ${e.status}
-            </span>
+            <div>
+                <span class="badge bg-${statusBadge[e.status]} px-3 py-2 me-2">
+                    ${e.status}
+                </span>
+                ${e.status === "active" ? 
+                    `<button class="btn btn-primary btn-sm" onclick="goVote(${e.id})">
+                        Votar
+                    </button>` : ""}
+            </div>
         `;
 
         list.appendChild(li);
     });
 }
 
-fetch("http://localhost:5000/elections")
-    .then(res => res.json())
-    .then(data => {
-        elections = data;
-        render();
-    })
-    .catch(err => {
-        console.error(err);
-        alert("Error conectando al backend");
-    });
+fetch("http://localhost:5000/elections", {
+    credentials: "include"
+})
+.then(res => {
+    if (!res.ok) {
+        throw new Error("No autorizado o error servidor");
+    }
+    return res.json();
+})
+.then(data => {
+    elections = data;
+    render();
+})
+.catch(err => {
+    console.error("ERROR:", err);
+    alert("Error conectando al backend");
+});
 
 filter.addEventListener("change", render);
+
+function goVote(id) {
+    window.location.href = `vote.html?election_id=${id}`;
+}
+
 </script>
+
 
 </body>
 </html>

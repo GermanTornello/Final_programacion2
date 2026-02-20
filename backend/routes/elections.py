@@ -36,4 +36,9 @@ def get_elections():
         params.append(date_filter)
 
     cursor.execute(query, params)
-    return jsonify(cursor.fetchall())
+    data = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify(data)
