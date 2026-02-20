@@ -86,10 +86,18 @@ function render() {
                 <span class="badge bg-${statusBadge[e.status]} px-3 py-2 me-2">
                     ${e.status}
                 </span>
+
                 ${e.status === "active" ? 
-                    `<button class="btn btn-primary btn-sm" onclick="goVote(${e.id})">
+                    `<button class="btn btn-primary btn-sm me-2" onclick="goVote(${e.id})">
                         Votar
-                    </button>` : ""}
+                    </button>` 
+                    : ""
+                }
+
+                <button class="btn btn-outline-secondary btn-sm"
+                    onclick="goResults(${e.id})">
+                    Resultados
+                </button>
             </div>
         `;
 
@@ -97,6 +105,7 @@ function render() {
     });
 }
 
+// 🔹 Traer elecciones del backend
 fetch("http://localhost:5000/elections", {
     credentials: "include"
 })
@@ -115,14 +124,20 @@ fetch("http://localhost:5000/elections", {
     alert("Error conectando al backend");
 });
 
+// 🔹 Filtro
 filter.addEventListener("change", render);
 
+// 🔹 Ir a votar
 function goVote(id) {
     window.location.href = `vote.html?election_id=${id}`;
 }
 
-</script>
+// 🔹 Ir a resultados (CASO 3)
+function goResults(id) {
+    window.location.href = `results.html?election_id=${id}`;
+}
 
+</script>
 
 </body>
 </html>

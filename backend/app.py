@@ -154,6 +154,49 @@ def vote():
         return jsonify({"error": "Ya votaste en esta elección"}), 400
 
 
+@app.route("/results/<int:election_id>", methods=["GET"])
+def results(election_id):
+
+    # 🔒 Solo admin
+    if "user_id" not in session:
+        return jsonify({"error": "No autenticado"}), 401
+
+    if session.get("role") != "admin":
+        return jsonify({"error": "No autorizado"}), 403
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # votos por candidato
+    cursor.execute("""
+        SELECT c.name, COUNT(v.id) as votes
+        FROM candidates c
+        LEFT JOIN votes v ON c.id = v.candidate_id
+        WHERE c.election_id = %s
+        GROUP BY c.id
+        ORDER BY votes DESC
+    """, (election_id,))
+
+    results = cursor.fetchall()
+
+    # total votos
+    total_votes = sum(r["votes"] for r in results)
+
+    # agregar porcentaje
+    for r in results:
+        if total_votes > 0:
+            r["percentage"] = round((r["votes"] / total_votes) * 100, 2)
+        else:
+            r["percentage"] = 0
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({
+        "total_votes": total_votes,
+        "results": results
+    })
+
 # ---------------- LOGOUT ----------------
 
 @app.route("/logout", methods=["POST"])
