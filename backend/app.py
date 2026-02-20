@@ -45,6 +45,95 @@ def test_db():
 
 # ---------------- LOGIN ----------------
 # ---------------- LOGIN ----------------
+@app.route("/register", methods=["POST"])
+def register():
+
+    data = request.get_json()
+
+    email = data.get("email")
+    password = data.get("password")
+    role = "votar"   # por defecto
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            INSERT INTO users (email, password, role)
+            VALUES (%s, %s, %s)
+        """, (email, password, role))
+
+        conn.commit()
+
+        return jsonify({"message": "Usuario registrado correctamente"})
+
+    except Exception as e:
+        print("ERROR REGISTER:", str(e))
+        return jsonify({"error": "El usuario ya existe"}), 400
+
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route("/admin/candidate", methods=["POST"])
+def create_candidate():
+
+    if "user_id" not in session:
+        return jsonify({"error": "No autenticado"}), 401
+
+    if session["role"] != "admin":
+        return jsonify({"error": "Solo admin"}), 403
+
+    data = request.get_json()
+
+    name = data.get("name")
+    election_id = data.get("election_id")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO candidates (name, election_id)
+        VALUES (%s, %s)
+    """, (name, election_id))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Candidato creado"})
+
+@app.route("/admin/election", methods=["POST"])
+def create_election():
+
+    if "user_id" not in session:
+        return jsonify({"error": "No autenticado"}), 401
+
+    if session["role"] != "admin":
+        return jsonify({"error": "Solo admin"}), 403
+
+    data = request.get_json()
+
+    title = data.get("title")
+    status = "inactive"
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO elections (title, status)
+        VALUES (%s, %s)
+    """, (title, status))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Elección creada"})
+
+
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin</title>
+</head>
+<body>
+
+<h2>Crear Elección</h2>
+
+<input id="name" placeholder="Nombre"><br>
+<input id="start" type="date"><br>
+<input id="end" type="date"><br>
+
+<button onclick="crear()">Crear</button>
+
+<script>
+function crear() {
+    fetch("http://localhost:5000/elections", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: document.getElementById("name").value,
+            start_date: document.getElementById("start").value,
+            end_date: document.getElementById("end").value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Elección creada");
+        console.log(data);
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Error");
+    });
+}
+</script>
+
+</body>
+</html>
