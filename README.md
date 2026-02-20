@@ -1,9 +1,3 @@
-Perfecto, te dejo un README listo para entregar (copiar y pegar en tu repo). Está alineado con todo lo que te piden 👇
-
-⸻
-
-:::writing{variant=standard id=58213}
-
 🗳️ eVote System
 
 Aplicación web para la gestión de procesos electorales digitales.
