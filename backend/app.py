@@ -115,16 +115,16 @@ def create_election():
 
     data = request.get_json()
 
-    title = data.get("title")
-    status = "inactive"
+    name = data.get("title")
+    status = "upcoming"   # válido según tu ENUM
 
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
-        INSERT INTO elections (title, status)
+        INSERT INTO elections (name, status)
         VALUES (%s, %s)
-    """, (title, status))
+    """, (name, status))
 
     conn.commit()
 
@@ -166,10 +166,10 @@ def login():
 
 
     return jsonify({
-        "message": "Login correcto",
-        "email": user["email"]
-    })
-
+    "message": "Login correcto",
+    "email": user["email"],
+    "role": user["role"]
+})
 
 
 # ---------------- CANDIDATOS ----------------
@@ -286,7 +286,59 @@ def results(election_id):
         "results": results
     })
 
+@app.route("/admin/election/<int:election_id>/status", methods=["PUT"])
+def update_election_status(election_id):
+
+    if "user_id" not in session:
+        return jsonify({"error": "No autenticado"}), 401
+
+    if session.get("role") != "admin":
+        return jsonify({"error": "Solo admin"}), 403
+
+    data = request.get_json()
+    new_status = data.get("status")
+
+    if new_status not in ["inactive", "active", "closed"]:
+        return jsonify({"error": "Estado inválido"}), 400
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE elections
+        SET status = %s
+        WHERE id = %s
+    """, (new_status, election_id))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Estado actualizado correctamente"})
+
+@app.route("/admin/elections", methods=["GET"])
+def get_all_elections():
+
+    if "user_id" not in session:
+        return jsonify({"error": "No autenticado"}), 401
+
+    if session.get("role") != "admin":
+        return jsonify({"error": "Solo admin"}), 403
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM elections ORDER BY id DESC")
+    elections = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify(elections)
+
 # ---------------- LOGOUT ----------------
+
 
 @app.route("/logout", methods=["POST"])
 def logout():

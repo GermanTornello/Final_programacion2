@@ -1,43 +1,181 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Admin</title>
+<meta charset="UTF-8">
+<title>Panel Admin</title>
+<button onclick="goToPublic()" style="margin-bottom:20px;">
+    Ir a vista pública
+</button>
+<style>
+body {
+    font-family: Arial;
+    background: #f4f6f9;
+    padding: 30px;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+button {
+    padding: 6px 10px;
+    margin-right: 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.active { background: green; color: white; }
+.inactive { background: orange; color: white; }
+.closed { background: red; color: white; }
+
+input {
+    padding: 8px;
+    width: 250px;
+}
+</style>
 </head>
 <body>
 
-<h2>Crear Elección</h2>
+<h1>Panel Administrador</h1>
 
-<input id="name" placeholder="Nombre"><br>
-<input id="start" type="date"><br>
-<input id="end" type="date"><br>
+<div class="card">
+    <h3>Crear nueva elección</h3>
+    <input type="text" id="title" placeholder="Título de la elección">
+    <button onclick="createElection()">Crear</button>
+</div>
 
-<button onclick="crear()">Crear</button>
+<div class="card">
+    <h3>Lista de elecciones</h3>
+    <div id="elections"></div>
+</div>
 
 <script>
-function crear() {
-    fetch("http://localhost:5000/elections", {
+const API = "http://localhost:5000";
+
+async function loadElections() {
+    const res = await fetch(`${API}/admin/elections`, {
+        credentials: "include"
+    });
+
+    if (!res.ok) {
+        alert("No autorizado");
+        window.location.href = "login.html";
+        return;
+    }
+
+    const elections = await res.json();
+    const container = document.getElementById("elections");
+    container.innerHTML = "";
+
+    elections.forEach(e => {
+        container.innerHTML += `
+    <div style="margin-bottom:20px; border-bottom:1px solid #ccc; padding-bottom:10px;">
+        <strong>${e.name}</strong> 
+        - Estado: <span>${e.status}</span>
+        <br>
+        <button onclick="updateStatus(${e.id}, 'active')" class="active">Activar</button>
+        <button onclick="updateStatus(${e.id}, 'upcoming')" class="inactive">Próxima</button>
+        <button onclick="updateStatus(${e.id}, 'closed')" class="closed">Cerrar</button>
+
+        <br><br>
+        <input type="text" id="candidate-${e.id}" placeholder="Nombre candidato">
+        <button onclick="createCandidate(${e.id})">Agregar candidato</button>
+    </div>
+`;
+    });
+}
+
+async function createElection() {
+    const title = document.getElementById("title").value;
+
+    if (!title) {
+        alert("Ingrese un título");
+        return;
+    }
+
+    const res = await fetch(`${API}/admin/election`, {
         method: "POST",
-        credentials: "include",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-            name: document.getElementById("name").value,
-            start_date: document.getElementById("start").value,
-            end_date: document.getElementById("end").value
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert("Elección creada");
-        console.log(data);
-    })
-    .catch(err => {
-        console.error(err);
-        alert("Error");
+        credentials: "include",
+        body: JSON.stringify({ title })
     });
+
+    const data = await res.json();
+
+    if (res.ok) {
+        alert("Elección creada");
+        document.getElementById("title").value = "";
+        loadElections();
+    } else {
+        alert(data.error);
+    }
 }
+async function createCandidate(electionId) {
+
+    const input = document.getElementById(`candidate-${electionId}`);
+    const name = input.value;
+
+    if (!name) {
+        alert("Ingrese nombre del candidato");
+        return;
+    }
+
+    const res = await fetch(`${API}/admin/candidate`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({
+            name: name,
+            election_id: electionId
+        })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+    alert("Candidato agregado");
+    input.value = "";
+    loadElections();   // ← ESTO FALTABA
+    } else {
+        alert(data.error);
+    }
+}
+async function updateStatus(id, status) {
+    const res = await fetch(`${API}/admin/election/${id}/status`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({ status })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+        loadElections();
+    } else {
+        alert(data.error);
+    }
+}
+function goToPublic() {
+    window.location.href = "index.html";
+}
+
+loadElections();
 </script>
 
 </body>
