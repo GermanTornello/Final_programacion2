@@ -43,7 +43,7 @@ def test_db():
     conn.close()
     return "DB OK"
 
-# ---------------- LOGIN ----------------
+
 # ---------------- LOGIN ----------------
 @app.route("/register", methods=["POST"])
 def register():
